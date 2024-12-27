@@ -1,0 +1,45 @@
+#avatar {
+  width: 50px;
+  border-radius: 50%;
+}
+
+input {
+  width: 50%;
+}
+
+.dropdown-toggle::after {
+  display: none;
+}
+
+.form-select {
+  width: 100px;
+}
+
+.col .btn {
+  width: 80px;
+}
+
+#show-block .col-lg-3:first-child {
+  width: 70%;
+}
+#show-block .col-lg-3:last-child {
+  width: 30%;
+}
+// .card-img-top {
+//   height: 595px;
+// }
+.episodeBtnOn {
+  background-color: black !important;
+}
+// #log-in-modal .modal-content{
+//   background-color: transparent;
+// }
+.carousel-control-prev, .carousel-control-next {
+  width: 30px;
+  height: 70px;
+  margin: auto 0;
+  background-color: white;
+} 
+#movieCarousel1 button span {
+  color: red !important;
+}

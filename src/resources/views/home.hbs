@@ -1,0 +1,27 @@
+<div class="posts-container">
+  {{#if posts.length}}
+    <div class="d-flex justify-content-between flex-wrap">
+      {{#each posts}}
+        <a href="{{this.link}}" class="post-link">
+          {{#if @first}}
+            <span class="Featured">Nổi bật</span>
+          {{/if}}
+          <div class="post-item">
+            {{#if this.imageUrl}}
+              <img src="{{this.imageUrl}}" alt="{{this.title}}" class="post-thumbnail" />
+            {{/if}}
+            <p class="post-title">{{this.title}}</p>
+            <div class="post-meta">
+              <time datetime="{{this.datetime}}">
+                <i class="bi bi-calendar-check"></i> {{this.time}}
+              </time>
+              <span class="reading-time">{{this.readingTime}}</span>
+            </div>
+          </div>
+        </a>
+      {{/each}}
+    </div>
+  {{else}}
+    <div>Không có bài viết nào.</div>
+  {{/if}}
+</div>
