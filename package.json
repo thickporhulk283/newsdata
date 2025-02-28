@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "engines": {
-    "node": "14.x"
+    "node": "20.x"
   },
   "scripts": {
     "beautiful": "prettier --single-quote --trailing-comma all --write 'src/**/*.{js,json,scss}'",
