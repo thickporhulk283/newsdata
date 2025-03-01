@@ -8,7 +8,7 @@ class SiteController {
       let allPosts = [];
       
       // Loop through pages 1 to 10
-      for (let page = 1; page <= 5; page++) {
+      for (let page = 1; page <= 1; page++) {
         console.log(`Fetching page ${page}...`);
         
         // Fetch data from current page
