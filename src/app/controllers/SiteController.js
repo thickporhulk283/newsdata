@@ -7,12 +7,12 @@ class SiteController {
       console.log('Bắt đầu lấy dữ liệu...');
       
       // Tạo danh sách các promises để chạy song song
-      const promises = Array.from({ length: 5 }, async (_, i) => {
+      const promises = Array.from({ length: 3 }, async (_, i) => {
         const page = i + 1;
         console.log(`Fetching page ${page}...`);
 
         try {
-          const url = `https://www.quangbinhtravel.vn/tin-tuc/goc-bao-chi/page/${page}`;
+          const url = `https://quangbinhtourism.vn/noi-bat/tin-tuc/${page}`;
           const response = await axios.get(url);
           const html = response.data;
           const dom = new JSDOM(html);
