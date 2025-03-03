@@ -10,54 +10,35 @@ class SiteController {
       const promises = Array.from({ length: 3 }, async (_, i) => {
         const page = i + 1;
         console.log(`Fetching page ${page}...`);
-
         try {
           const url = `https://quangbinhtourism.vn/noi-bat/tin-tuc/${page}`;
           const response = await axios.get(url);
           const html = response.data;
           const dom = new JSDOM(html);
           const document = dom.window.document;
-
-          const experienceContainer = document.querySelector('.experience_bottom') ||
-                                      document.querySelector('.experience_list');
-
-          if (!experienceContainer) {
-            console.log(`Không tìm thấy container trên trang ${page}, có thể đã hết trang.`);
-            return [];
-          }
-
-          const postItems = experienceContainer.querySelectorAll('.experience_item');
-          if (postItems.length === 0) {
+          
+          // Sử dụng selector mới
+          const newsSection = document.querySelector('#post-latest-stories-3a8347e');
+          const articles = newsSection ? newsSection.querySelectorAll('article') : [];
+          
+          if (articles.length === 0) {
             console.log(`Không tìm thấy bài viết trên trang ${page}, có thể đã hết trang.`);
             return [];
           }
-
-          return Array.from(postItems).map((postItem) => {
+          
+          return Array.from(articles).map((article) => {
             try {
-              const postLf = postItem.querySelector('.post_lf-wrap') || postItem.querySelector('.post_lf');
-              const postRt = postItem.querySelector('.post_rt');
-
-              const imgElement = postLf?.querySelector('img');
-              const imgUrl = imgElement?.getAttribute('src') || imgElement?.getAttribute('data-src') || null;
-
-              const titleElement = postRt?.querySelector('h3') || postItem.querySelector('h3');
-              const linkElement = titleElement?.querySelector('a') || postLf?.querySelector('a');
-
-              const title = titleElement?.textContent.trim() || 'Không có tiêu đề';
-              const link = linkElement?.getAttribute('href') || '#';
-
-              const timeElement = postRt?.querySelector('.note-text.cl-text3') || postItem.querySelector('.note-text.cl-text3');
-              const time = timeElement?.textContent.trim() || 'Không có ngày';
-
-              const contentElement = postRt?.querySelector('.content') || postItem.querySelector('.content');
-              const content = contentElement?.textContent.trim() || 'Không có nội dung';
-
+              const imgTag = article.querySelector('img');
+              const titleTag = article.querySelector('a[title]');
+              const dateTag = article.querySelector('.post-meta-date');
+              const readingTimeTag = article.querySelector('.post-meta-reading-time');
+              
               return {
-                imageUrl: imgUrl,
-                title,
-                link,
-                time,
-                content,
+                imageUrl: imgTag ? imgTag.getAttribute('src') || imgTag.getAttribute('data-src') : null,
+                title: titleTag ? titleTag.getAttribute('title') : 'Không có tiêu đề',
+                link: titleTag ? titleTag.getAttribute('href') : '#',
+                time: dateTag ? dateTag.textContent.trim() : 'Không có ngày',
+                readingTime: readingTimeTag ? readingTimeTag.textContent.trim() : 'Không có thời gian đọc',
                 page,
               };
             } catch (err) {
@@ -70,14 +51,11 @@ class SiteController {
           return [];
         }
       });
-
+      
       // Chạy tất cả các request song song
       const allPosts = (await Promise.all(promises)).flat();
-
       console.log(`Lấy xong ${allPosts.length} bài viết!`);
-
       res.render('home', { posts: allPosts });
-
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu:', error);
       const fallbackPosts = [
@@ -86,7 +64,7 @@ class SiteController {
           title: 'Tiến phong làm du lịch có trách nhiệm',
           link: 'https://www.quangbinhtravel.vn/tien-phong-lam-du-lich-co-trach-nhiem.html',
           time: '14:04 - 16.09.2024',
-          content: 'Công ty TNHH Netin (Netin Travel, trụ sở ở TP. Đồng Hới), là đơn vị lữ hành quốc tế có hơn 10 năm kinh nghiệm hoạt động du lịch.',
+          readingTime: '5 phút đọc',
         }
       ];
       res.render('home', { posts: fallbackPosts });
