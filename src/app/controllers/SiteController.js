@@ -7,7 +7,7 @@ class SiteController {
       console.log('Bắt đầu lấy dữ liệu...');
 
       // Tạo danh sách các promises để chạy song song
-      const promises = [...Array(5)].map(async (_, i) => {
+      const promises = [...Array(4)].map(async (_, i) => {
         const page = i + 1;
         console.log(`Fetching page ${page}...`);
         try {
