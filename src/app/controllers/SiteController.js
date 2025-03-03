@@ -5,13 +5,14 @@ class SiteController {
   async index(req, res, next) {
     try {
       console.log('Bắt đầu lấy dữ liệu...');
-
+      
       // Tạo danh sách các promises để chạy song song
-      const promises = [...Array(4)].map(async (_, i) => {
+      const promises = Array.from({ length: 5 }, async (_, i) => {
         const page = i + 1;
         console.log(`Fetching page ${page}...`);
+
         try {
-          const url = `https://quangbinhtravel.vn/tin-tuc/${page}`;
+          const url = `https://www.quangbinhtravel.vn/tin-tuc/goc-bao-chi/page/${page}`;
           const response = await axios.get(url);
           const html = response.data;
           const dom = new JSDOM(html);
@@ -51,12 +52,19 @@ class SiteController {
               const contentElement = postRt?.querySelector('.content') || postItem.querySelector('.content');
               const content = contentElement?.textContent.trim() || 'Không có nội dung';
 
-              return { imageUrl: imgUrl, title, link, time, content, page };
+              return {
+                imageUrl: imgUrl,
+                title,
+                link,
+                time,
+                content,
+                page,
+              };
             } catch (err) {
               console.error(`Lỗi khi xử lý bài viết trên trang ${page}:`, err);
               return null;
             }
-          }).filter(post => post !== null && post !== undefined);
+          }).filter(Boolean); // Loại bỏ các giá trị null
         } catch (error) {
           console.error(`Lỗi khi lấy dữ liệu trang ${page}:`, error);
           return [];
@@ -65,8 +73,11 @@ class SiteController {
 
       // Chạy tất cả các request song song
       const allPosts = (await Promise.all(promises)).flat();
+
       console.log(`Lấy xong ${allPosts.length} bài viết!`);
+
       res.render('home', { posts: allPosts });
+
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu:', error);
       const fallbackPosts = [
