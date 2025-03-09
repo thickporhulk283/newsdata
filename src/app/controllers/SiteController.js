@@ -7,7 +7,7 @@ class SiteController {
       console.log('🔄 Bắt đầu lấy dữ liệu...');
 
       // Tạo danh sách promises để lấy dữ liệu từ 5 trang
-      const promises = Array.from({ length: 3 }, async (_, i) => {
+      const promises = Array.from({ length: 2 }, async (_, i) => {
         const page = i + 1;
         console.log(`📥 Đang lấy dữ liệu trang ${page}...`);
 
