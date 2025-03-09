@@ -5,34 +5,42 @@ class SiteController {
   async index(req, res, next) {
     try {
       console.log('🔄 Bắt đầu lấy dữ liệu...');
-
-      // Tạo danh sách promises để lấy dữ liệu từ 5 trang
-      const promises = Array.from({ length: 2 }, async (_, i) => {
+      
+      // Thiết lập timeout cho axios
+      const axiosConfig = {
+        timeout: 10000 // 10 giây timeout
+      };
+      
+      // Giảm số lượng trang để tải nhanh hơn
+      const maxPages = 3;
+      const promises = Array.from({ length: maxPages }, async (_, i) => {
         const page = i + 1;
         console.log(`📥 Đang lấy dữ liệu trang ${page}...`);
-
         try {
           const url = `https://quangbinhtourism.vn/noi-bat/tin-tuc/page/${page}`;
-          const response = await axios.get(url);
+          const response = await axios.get(url, axiosConfig);
           const html = response.data;
           const dom = new JSDOM(html);
           const document = dom.window.document;
-
           const articles = document.querySelectorAll('.content-block.post-list-view');
-
+          
           if (articles.length === 0) {
             console.log(`⚠️ Không tìm thấy bài viết trên trang ${page}, có thể đã hết dữ liệu.`);
             return [];
           }
-
-          return Array.from(articles).map((article) => {
+          
+          // Xử lý tối đa 10 bài viết mỗi trang để giảm thời gian
+          const maxArticlesPerPage = 10;
+          const limitedArticles = Array.from(articles).slice(0, maxArticlesPerPage);
+          
+          return limitedArticles.map((article) => {
             try {
               const imgTag = article.querySelector('.post-thumbnail img');
               const titleTag = article.querySelector('.title a');
               const dateTag = article.querySelector('.post-meta-date');
               const readingTimeTag = article.querySelector('.post-meta-reading-time');
               const viewCountTag = article.querySelector('.view-count');
-
+              
               return {
                 imageUrl: imgTag ? imgTag.src : null,
                 title: titleTag ? titleTag.textContent.trim() : 'Không có tiêu đề',
@@ -46,23 +54,33 @@ class SiteController {
               console.error(`❌ Lỗi xử lý bài viết trên trang ${page}:`, err);
               return null;
             }
-          }).filter(Boolean); // Loại bỏ các bài viết null do lỗi xử lý
+          }).filter(Boolean);
         } catch (error) {
-          console.error(`❌ Lỗi khi lấy dữ liệu trang ${page}:`, error);
+          console.error(`❌ Lỗi khi lấy dữ liệu trang ${page}:`, error.message);
           return [];
         }
       });
-
-      // Chạy tất cả requests song song
-      const allPosts = (await Promise.all(promises)).flat();
-
+      
+      // Thêm timeout tổng thể cho toàn bộ Promise.all
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout after 25 seconds')), 25000);
+      });
+      
+      // Kết hợp timeout với promises thực tế
+      const allPosts = (await Promise.race([
+        Promise.all(promises),
+        timeoutPromise
+      ])).flat();
+      
       console.log(`✅ Lấy xong ${allPosts.length} bài viết!`);
-
       res.render('home', { posts: allPosts });
-
     } catch (error) {
-      console.error('❌ Lỗi khi tải dữ liệu:', error);
-      res.render('home', { posts: [] });
+      console.error('❌ Lỗi khi tải dữ liệu:', error.message);
+      // Hiển thị trang dù có lỗi, có thể hiển thị thông báo lỗi
+      res.render('home', { 
+        posts: [],
+        error: 'Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại sau.'
+      });
     }
   }
 }
