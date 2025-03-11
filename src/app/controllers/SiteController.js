@@ -40,36 +40,34 @@ class SiteController {
           
           return limitedArticles.map((article) => {
             try {
-              // Các selector phù hợp với HTML mẫu
-              const imgTag = article.querySelector('.post_lf--wrap img');
-              const titleTag = article.querySelector('.cl-text.title.fw-6.title-m');
-              const linkTag = article.querySelector('.post_lf--wrap a, .cl-text.title.fw-6.title-m a');
-              const dateTag = article.querySelector('.note-text.cl-text3');
-              const contentTag = article.querySelector('.note-text.cl-gray3.content');
-              const authorTag = article.querySelector('.note-text.cl-text.fw-6');
+              // Lấy tiêu đề - cải tiến selector để đảm bảo bắt được tiêu đề
+              // Tìm thẻ h3 trong post_box và sau đó lấy văn bản
+              const titleElement = article.querySelector('.post_box h3');
+              const title = titleElement ? titleElement.textContent.trim() : 'Không có tiêu đề';
               
-              // Lấy URL hình ảnh từ thuộc tính src
+              // Lấy URL bài viết - lấy từ thẻ a trong post_box > h3
+              const linkElement = article.querySelector('.post_box h3 a');
+              const link = linkElement ? linkElement.getAttribute('href') : '#';
+              
+              // Lấy URL hình ảnh
+              const imgTag = article.querySelector('.post_lf--wrap img');
               const imageUrl = imgTag ? imgTag.getAttribute('src') : null;
               
-              // Lấy link từ thẻ a
-              const link = linkTag ? linkTag.getAttribute('href') : '#';
+              // Lấy ngày đăng - thẻ p với class note-text cl-text3
+              const dateTag = article.querySelector('.note-text.cl-text3');
+              const publishDate = dateTag ? dateTag.textContent.trim() : 'Không có ngày';
               
-              // Lấy tiêu đề
-              const title = titleTag ? titleTag.textContent.trim() : 'Không có tiêu đề';
-              
-              // Lấy ngày đăng
-              let publishDate = 'Không có ngày';
-              if (dateTag) {
-                const dateText = dateTag.textContent.trim();
-                // Format lại ngày nếu cần
-                publishDate = dateText;
-              }
-              
-              // Lấy nội dung tóm tắt
+              // Lấy nội dung tóm tắt - thẻ div với class note-text cl-gray3 content
+              const contentTag = article.querySelector('.note-text.cl-gray3.content');
               const content = contentTag ? contentTag.textContent.trim() : 'Không có nội dung';
               
               // Lấy tên tác giả/nguồn
+              const authorTag = article.querySelector('.note-text.cl-text.fw-6');
               const author = authorTag ? authorTag.textContent.trim() : 'Quang Binh Travel';
+              
+              // Debug log để xem tiêu đề
+              console.log(`Tiêu đề: ${title}`);
+              console.log(`Link: ${link}`);
               
               return {
                 imageUrl,
@@ -139,8 +137,8 @@ class SiteController {
       const dom = new JSDOM(html);
       const document = dom.window.document;
       
-      // Lấy chi tiết bài viết
-      const title = document.querySelector('.cl-text.title.fw-6.title-m')?.textContent.trim() || 'Chi tiết bài viết';
+      // Lấy chi tiết bài viết - cải tiến các selector
+      const title = document.querySelector('.post_box h3')?.textContent.trim() || 'Chi tiết bài viết';
       const content = document.querySelector('.note-text.cl-gray3.content')?.innerHTML || 'Không có nội dung';
       const date = document.querySelector('.note-text.cl-text3')?.textContent.trim() || '';
       const author = document.querySelector('.note-text.cl-text.fw-6')?.textContent.trim() || 'Quang Binh Travel';
