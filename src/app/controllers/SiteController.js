@@ -26,8 +26,8 @@ class SiteController {
           const dom = new JSDOM(html);
           const document = dom.window.document;
           
-          // Dựa vào HTML mẫu, các bài đăng có class="post"
-          const articles = document.querySelectorAll('.post');
+          // Lấy các bài đăng (phân tích từ HTML mới)
+          const articles = document.querySelectorAll('.post, .experience_item');
           
           if (articles.length === 0) {
             console.log(`⚠️ Không tìm thấy bài viết trên trang ${page}, có thể đã hết dữ liệu.`);
@@ -40,39 +40,74 @@ class SiteController {
           
           return limitedArticles.map((article) => {
             try {
-              // Lấy tiêu đề - cải tiến selector để đảm bảo bắt được tiêu đề
-              // Tìm thẻ h3 trong post_box và sau đó lấy văn bản
-              const titleElement = article.querySelector('.post_box h3');
-              const title = titleElement ? titleElement.textContent.trim() : 'Không có tiêu đề';
+              // Quét toàn bộ cấu trúc HTML để tìm các thành phần cần thiết
+              console.log(`Đang xử lý bài viết...`);
               
-              // Lấy URL bài viết - lấy từ thẻ a trong post_box > h3
-              const linkElement = article.querySelector('.post_box h3 a');
-              const link = linkElement ? linkElement.getAttribute('href') : '#';
+              // Lấy tiêu đề từ thẻ h3 > a
+              let title = 'Không có tiêu đề';
+              let linkUrl = '#';
+              
+              // Tìm thẻ h3 trong post_box
+              const titleElement = article.querySelector('h3.cl-text.title.fw-6.title-m');
+              if (titleElement) {
+                // Lấy tiêu đề từ nội dung văn bản của h3
+                title = titleElement.textContent.trim();
+                
+                // Tìm thẻ a trong h3 để lấy URL
+                const linkElement = titleElement.querySelector('a');
+                if (linkElement) {
+                  linkUrl = linkElement.getAttribute('href');
+                }
+              } else {
+                // Thử tìm thẻ a với class post_img
+                const imgLinkElement = article.querySelector('a.post_img');
+                if (imgLinkElement) {
+                  linkUrl = imgLinkElement.getAttribute('href');
+                  // Nếu không tìm thấy tiêu đề từ h3, thử lấy từ alt của hình ảnh
+                  const imgElement = imgLinkElement.querySelector('img');
+                  if (imgElement && imgElement.getAttribute('alt')) {
+                    title = imgElement.getAttribute('alt');
+                  }
+                }
+              }
               
               // Lấy URL hình ảnh
-              const imgTag = article.querySelector('.post_lf--wrap img');
-              const imageUrl = imgTag ? imgTag.getAttribute('src') : null;
+              let imageUrl = null;
+              const imgTag = article.querySelector('img');
+              if (imgTag) {
+                imageUrl = imgTag.getAttribute('src');
+              }
               
-              // Lấy ngày đăng - thẻ p với class note-text cl-text3
+              // Lấy ngày đăng
+              let publishDate = 'Không có ngày';
               const dateTag = article.querySelector('.note-text.cl-text3');
-              const publishDate = dateTag ? dateTag.textContent.trim() : 'Không có ngày';
+              if (dateTag) {
+                publishDate = dateTag.textContent.trim();
+              }
               
-              // Lấy nội dung tóm tắt - thẻ div với class note-text cl-gray3 content
+              // Lấy nội dung tóm tắt
+              let content = 'Không có nội dung';
               const contentTag = article.querySelector('.note-text.cl-gray3.content');
-              const content = contentTag ? contentTag.textContent.trim() : 'Không có nội dung';
+              if (contentTag) {
+                content = contentTag.textContent.trim();
+              }
               
-              // Lấy tên tác giả/nguồn
+              // Lấy tác giả/nguồn
+              let author = 'Quang Binh Travel';
               const authorTag = article.querySelector('.note-text.cl-text.fw-6');
-              const author = authorTag ? authorTag.textContent.trim() : 'Quang Binh Travel';
+              if (authorTag) {
+                author = authorTag.textContent.trim();
+              }
               
-              // Debug log để xem tiêu đề
-              console.log(`Tiêu đề: ${title}`);
-              console.log(`Link: ${link}`);
+              // Debug log
+              console.log(`Tiêu đề: "${title}"`);
+              console.log(`Link: ${linkUrl}`);
+              console.log(`Ảnh: ${imageUrl}`);
               
               return {
                 imageUrl,
                 title,
-                link,
+                link: linkUrl,
                 date: publishDate,
                 content: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
                 author,
@@ -101,6 +136,13 @@ class SiteController {
       ])).flat();
       
       console.log(`✅ Lấy xong ${allPosts.length} bài viết từ Quang Binh Travel!`);
+      
+      // Kiểm tra và log xem có bài viết nào không có tiêu đề không
+      const postsWithNoTitle = allPosts.filter(post => post.title === 'Không có tiêu đề');
+      if (postsWithNoTitle.length > 0) {
+        console.log(`⚠️ Có ${postsWithNoTitle.length} bài viết không lấy được tiêu đề`);
+      }
+      
       res.render('home', { 
         posts: allPosts,
         title: 'Tin tức Quang Bình Travel',
@@ -125,9 +167,13 @@ class SiteController {
         return res.redirect('/');
       }
       
-      const fullUrl = `https://quangbinhtravel.vn/${url}`;
+      // Kiểm tra xem URL đã có đầy đủ domain chưa
+      const fullUrl = url.startsWith('http') ? url : `https://quangbinhtravel.vn/${url}`;
+      
+      console.log(`Đang tải chi tiết bài viết: ${fullUrl}`);
+      
       const response = await axios.get(fullUrl, {
-        timeout: 10000,
+        timeout: 15000,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -137,14 +183,35 @@ class SiteController {
       const dom = new JSDOM(html);
       const document = dom.window.document;
       
-      // Lấy chi tiết bài viết - cải tiến các selector
-      const title = document.querySelector('.post_box h3')?.textContent.trim() || 'Chi tiết bài viết';
-      const content = document.querySelector('.note-text.cl-gray3.content')?.innerHTML || 'Không có nội dung';
-      const date = document.querySelector('.note-text.cl-text3')?.textContent.trim() || '';
-      const author = document.querySelector('.note-text.cl-text.fw-6')?.textContent.trim() || 'Quang Binh Travel';
+      // Lấy chi tiết bài viết
+      let title = 'Chi tiết bài viết';
+      const titleElement = document.querySelector('h3.cl-text.title.fw-6.title-m');
+      if (titleElement) {
+        title = titleElement.textContent.trim();
+      }
+      
+      let content = 'Không có nội dung';
+      const contentElement = document.querySelector('.note-text.cl-gray3.content, .post_content');
+      if (contentElement) {
+        content = contentElement.innerHTML;
+      }
+      
+      let date = '';
+      const dateElement = document.querySelector('.note-text.cl-text3');
+      if (dateElement) {
+        date = dateElement.textContent.trim();
+      }
+      
+      let author = 'Quang Binh Travel';
+      const authorElement = document.querySelector('.note-text.cl-text.fw-6');
+      if (authorElement) {
+        author = authorElement.textContent.trim();
+      }
       
       // Lấy các hình ảnh trong bài viết
-      const images = Array.from(document.querySelectorAll('.post_content img')).map(img => img.src);
+      const images = Array.from(document.querySelectorAll('.post_content img, .post_lf--wrap img')).map(img => img.src);
+      
+      console.log(`Đã tải chi tiết bài viết: ${title}`);
       
       res.render('detail', {
         title,
