@@ -82,6 +82,36 @@ class SiteController {
       });
     }
   }
+
+    async getNewsInfor(req, res) {
+    try {
+      const slug = req.params.slug;
+      const url = `https://quangbinhtourism.vn/noi-bat/${slug}.html`;
+
+      const { data } = await axios.get(url);
+      const dom = new JSDOM(data);
+      const document = dom.window.document;
+
+      const title = document.querySelector('h1.title')?.textContent.trim() || 'Không có tiêu đề';
+      const date = document.querySelector('.post-meta-date')?.textContent.trim() || 'Không có ngày';
+      const readingTime = document.querySelector('.post-meta-reading-time')?.textContent.trim() || 'Không có thời gian đọc';
+      const postDetails = document.querySelector('.axil-post-details');
+
+      if (!postDetails) {
+        return res.status(404).render('error', { message: 'Không tìm thấy nội dung bài viết' });
+      }
+
+      res.render('news', {
+        title,
+        date,
+        readingTime,
+        content: postDetails.innerHTML,
+      });
+    } catch (error) {
+      console.error('Lỗi khi lấy dữ liệu:', error);
+      res.status(500).render('error', { message: 'Lỗi máy chủ, vui lòng thử lại sau' });
+    }
+  }
 }
 
 module.exports = new SiteController();
