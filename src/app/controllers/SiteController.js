@@ -86,7 +86,7 @@ class SiteController {
     async getNewsInfor(req, res) {
     try {
       const slug = req.params.slug;
-      const url = `https://quangbinhtourism.vn/noi-bat/${slug}.html`;
+      const url = `https://quangbinhtourism.vn/noi-bat/${slug}`;
 
       const { data } = await axios.get(url);
       const dom = new JSDOM(data);
