@@ -83,35 +83,50 @@ class SiteController {
     }
   }
 
-    async getNewsInfor(req, res) {
-    try {
-      const slug = req.params.slug;
-      const url = `https://quangbinhtourism.vn/noi-bat/${slug}`;
-
-      const { data } = await axios.get(url);
-      const dom = new JSDOM(data);
-      const document = dom.window.document;
-
-      const title = document.querySelector('h1.title')?.textContent.trim() || 'Không có tiêu đề';
-      const date = document.querySelector('.post-meta-date')?.textContent.trim() || 'Không có ngày';
-      const readingTime = document.querySelector('.post-meta-reading-time')?.textContent.trim() || 'Không có thời gian đọc';
-      const postDetails = document.querySelector('.axil-post-details');
-
-      if (!postDetails) {
-        return res.status(404).render('error', { message: 'Không tìm thấy nội dung bài viết' });
+   async getNewsInfor(req, res) {
+  try {
+    const slug = req.params.slug;
+    const url = `https://quangbinhtourism.vn/noi-bat/${slug}`;
+    const { data } = await axios.get(url);
+    const dom = new JSDOM(data);
+    const document = dom.window.document;
+    
+    // Extract existing data
+    const title = document.querySelector('h1.title')?.textContent.trim() || 'Không có tiêu đề';
+    const date = document.querySelector('.post-meta-date')?.textContent.trim() || 'Không có ngày';
+    const readingTime = document.querySelector('.post-meta-reading-time')?.textContent.trim() || 'Không có thời gian đọc';
+    
+    // Extract banner image URL
+    const bannerElement = document.querySelector('.banner.banner-single-post.post-layout-3.post-formate.post-standard.bg_image.d-flex.align-items-end');
+    let bannerImage = null;
+    
+    if (bannerElement) {
+      const styleAttribute = bannerElement.getAttribute('style');
+      if (styleAttribute) {
+        const bgImageMatch = styleAttribute.match(/background-image:\s*url\(['"]?(.*?)['"]?\)/i);
+        if (bgImageMatch && bgImageMatch[1]) {
+          bannerImage = bgImageMatch[1];
+        }
       }
-
-      res.render('news', {
-        title,
-        date,
-        readingTime,
-        content: postDetails.innerHTML,
-      });
-    } catch (error) {
-      console.error('Lỗi khi lấy dữ liệu:', error);
-      res.status(500).render('error', { message: 'Lỗi máy chủ, vui lòng thử lại sau' });
     }
+    
+    const postDetails = document.querySelector('.axil-post-details');
+    if (!postDetails) {
+      return res.status(404).render('error', { message: 'Không tìm thấy nội dung bài viết' });
+    }
+    
+    res.render('news', {
+      title,
+      date,
+      readingTime,
+      bannerImage, // Adding the banner image URL to the render data
+      content: postDetails.innerHTML,
+    });
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu:', error);
+    res.status(500).render('error', { message: 'Lỗi máy chủ, vui lòng thử lại sau' });
   }
+}
 }
 
 module.exports = new SiteController();
