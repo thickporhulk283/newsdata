@@ -12,7 +12,7 @@ class SiteController {
       };
       
       // Giảm số lượng trang để tải nhanh hơn
-      const maxPages = 3;
+      const maxPages = 1;
       const promises = Array.from({ length: maxPages }, async (_, i) => {
         const page = i + 1;
         console.log(`📥 Đang lấy dữ liệu trang ${page}...`);
